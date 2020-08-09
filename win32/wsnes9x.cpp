@@ -3603,7 +3603,8 @@ int WINAPI WinMain(
 		if (Settings.NetPlayServer)
 		{
 			uint8_t character = 0;
-			const int address = 0x7E056F - 0x7E0000;
+			const int address = 0x7E0044 - 0x7E0000;
+			//const int address = 0x7E056F - 0x7E0000;
 			const uint8* source;
 			if (address < 0x20000)
 				source = Memory.RAM + address;
@@ -3613,7 +3614,7 @@ int WINAPI WinMain(
 				source = Memory.FillRAM + address - 0x30000;
 			CopyMemory(&character, source, sizeof(uint8_t));
 
-			if (character - 1 != dkc_player)
+			if (character != dkc_player)
 			{
 				DKC_SwitchHost();
 			}
