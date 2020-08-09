@@ -496,7 +496,7 @@ void DKC_SwitchHost()
 {
 	if (Settings.NetPlayServer)
 	{
-		S9xSendDKCSwitchHostToClient(1);
+		S9xNPServerAddTask(NP_SERVER_SEND_DKC_SWITCH_HOST, 0);
 		Sleep(300);
 		EnableServer(!Settings.NetPlayServer);
 		Sleep(300);

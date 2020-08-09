@@ -74,6 +74,7 @@ void S9xNPSyncClient (int);
 void S9xNPSendROMLoadRequest (const char *filename);
 void S9xNPSendFreezeFileToAllClients (const char *filename);
 void S9xNPStopServer ();
+void S9xSendDKCSwitchHostToClient(int c);
 
 // DKC Hack
 std::string dkc_peerHostName;
@@ -884,6 +885,9 @@ void S9xNPServerLoop (void *)
                     S9xNPNoClientReady ();
                     S9xNPWaitForEmulationToComplete ();
                     S9xNPSendSRAMToAllClients ();
+                    break;
+                case NP_SERVER_SEND_DKC_SWITCH_HOST:
+                    S9xSendDKCSwitchHostToClient(1);
                     break;
 
                 default:
