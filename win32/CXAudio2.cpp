@@ -3,6 +3,8 @@
                 This file is licensed under the Snes9x License.
    For further information, consult the LICENSE file in the root directory.
 \*****************************************************************************/
+#include <mmdeviceapi.h>
+#include <Functiondiscoverykeys_devpkey.h>
 
 #include "CXAudio2.h"
 #include "../snes9x.h"
@@ -12,6 +14,8 @@
 #include "dxerr.h"
 #include "commctrl.h"
 #include <assert.h>
+
+
 
 /* CXAudio2
 	Implements audio output through XAudio2.
@@ -127,14 +131,35 @@ bool CXAudio2::InitVoices(void)
 {
 	HRESULT hr;
     // subtract -1, we added "Default" as first index
-    int device_index = FindDeviceIndex(GUI.AudioDevice) - 1;
+    int device_index = FindDeviceIndex(GUI.AudioDevice);
     if (device_index < 0)
         device_index = 0;
 
-	if ( FAILED(hr = pXAudio2->CreateMasteringVoice( &pMasterVoice, 2,
-		Settings.SoundPlaybackRate, 0, device_index, NULL ) ) ) {
-			DXTRACE_ERR_MSGBOX(TEXT("Unable to create mastering voice."),hr);
-			return false;
+	IMMDeviceEnumerator* pEnumerator = nullptr;
+	const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
+	const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
+	if (SUCCEEDED(CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, (void**)&pEnumerator)))
+	{
+		IMMDeviceCollection* endPoints = nullptr;
+		if (SUCCEEDED(pEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &endPoints)))
+		{
+			IMMDevice* pDevice = nullptr;
+			if (SUCCEEDED(endPoints->Item(device_index, &pDevice)))
+			{
+				LPWSTR deviceId;
+				if (SUCCEEDED(pDevice->GetId(&deviceId)))
+				{
+					if (FAILED(hr = pXAudio2->CreateMasteringVoice(&pMasterVoice, 2,
+						Settings.SoundPlaybackRate, 0, deviceId, NULL))) {
+						DXTRACE_ERR_MSGBOX(TEXT("Unable to create mastering voice."), hr);
+						return false;
+					}
+				}
+				pDevice->Release();
+			}
+			endPoints->Release();
+		}
+		pEnumerator->Release();
 	}
 
 	WAVEFORMATEX wfx;
@@ -374,19 +399,46 @@ std::vector<std::wstring> CXAudio2::GetDeviceList()
 
     if (pXAudio2)
     {
-        UINT32 num_devices;
-        pXAudio2->GetDeviceCount(&num_devices);
-
-        device_list.push_back(_T("Default"));
-
-        for (unsigned int i = 0; i < num_devices; i++)
-        {
-            XAUDIO2_DEVICE_DETAILS device_details;
-            if (SUCCEEDED(pXAudio2->GetDeviceDetails(i, &device_details)))
-            {
-                device_list.push_back(device_details.DisplayName);
-            }
-        }
+		IMMDeviceEnumerator* pEnumerator = nullptr;
+		const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
+		const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
+		if (SUCCEEDED(CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, (void**)&pEnumerator)))
+		{
+			IMMDeviceCollection* endPoints = nullptr;
+			if (SUCCEEDED(pEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &endPoints)))
+			{
+				UINT32 num_devices;
+				//device_list.push_back(_T("Default"));
+				if (SUCCEEDED(endPoints->GetCount(&num_devices)))
+				{
+					for (unsigned int i = 0; i < num_devices; i++)
+					{
+						IMMDevice* pDevice = nullptr;
+						if (SUCCEEDED(endPoints->Item(i, &pDevice)))
+						{
+							LPWSTR deviceId;
+							if (SUCCEEDED(pDevice->GetId(&deviceId)))
+							{
+								IPropertyStore* pPropertyStore;
+								if (SUCCEEDED(pDevice->OpenPropertyStore(STGM_READ, &pPropertyStore)))
+								{
+									PROPVARIANT varName;
+									PropVariantInit(&varName);
+									if (SUCCEEDED(pPropertyStore->GetValue(PKEY_Device_FriendlyName, &varName)))
+									{
+										device_list.push_back({ varName.pwszVal });
+									}
+								}
+								if (pPropertyStore) pPropertyStore->Release();
+							}
+						}
+						if (pDevice) pDevice->Release();
+					}
+				}
+			}
+			if (endPoints) endPoints->Release();
+		}
+		if (pEnumerator) pEnumerator->Release();
     }
 
     return device_list;
