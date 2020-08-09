@@ -75,6 +75,12 @@ void S9xNPSendROMLoadRequest (const char *filename);
 void S9xNPSendFreezeFileToAllClients (const char *filename);
 void S9xNPStopServer ();
 
+// DKC Hack
+std::string dkc_peerHostName;
+int dkc_player = 0;
+int dkc_otherPlayer = 1;
+HANDLE dkc_serverThreadHandle = nullptr;
+
 void S9xNPShutdownClient (int c, bool8 report_error = FALSE)
 {
     if (NPServer.Clients [c].Connected)
@@ -489,7 +495,17 @@ void S9xNPProcessClient (int c)
             }
             break;
         case NP_CLNT_JOYPAD:
-            NPServer.Joypads [c] = len;
+            if (Settings.NetPlayServer)
+            {
+                if (c == 0)
+                {
+                    NPServer.Joypads[dkc_player] = len;
+                }
+                else if (c == 1)
+                {
+                    NPServer.Joypads[dkc_otherPlayer] = len;
+                }
+            }
             break;
         case NP_CLNT_PAUSE:
 #ifdef NP_DEBUG
@@ -593,6 +609,11 @@ void S9xNPAcceptClient (int Listen, bool8 block)
     printf ("SERVER: waiting for HELLO message from new client @%ld\n", S9xGetMilliTime () - START);
 #endif
     S9xNPSetAction ("SERVER: Waiting for HELLO message from new client...");
+
+    if (i == 1)
+    {
+        dkc_peerHostName = NPServer.Clients[i].HostName;
+    }
 }
 
 static bool8 server_continue = TRUE;
@@ -891,9 +912,10 @@ bool8 S9xNPStartServer (int port)
 #endif
 
     server_continue = TRUE;
-    if (S9xNPServerInit (port))
+    if (S9xNPServerInit(port))
 #ifdef __WIN32__
-        return (_beginthread (S9xNPServerLoop, 0, &p) != (uintptr_t)(~0));
+        dkc_serverThreadHandle = (HANDLE)_beginthread(S9xNPServerLoop, 0, &p);
+        return (dkc_serverThreadHandle != nullptr);
 #else
     S9xNPServerLoop(NULL);
     return (TRUE);
@@ -914,6 +936,12 @@ void S9xNPStopServer ()
     {
         if (NPServer.Clients [i].Connected)
 	    S9xNPShutdownClient(i, FALSE);
+    }
+
+    if (dkc_serverThreadHandle != nullptr)
+    {
+        WaitForSingleObject(dkc_serverThreadHandle, INFINITE);
+        
     }
 }
 
@@ -1207,6 +1235,25 @@ void S9xNPSendFreezeFileToAllClients (const char *filename)
         }
         delete data;
     }
+}
+
+void S9xSendDKCSwitchHostToClient(int c)
+{
+#ifdef NP_DEBUG
+	printf("SERVER: Sending Switch Host to player %d @%ld\n", c + 1, S9xGetMilliTime() - START);
+#endif
+
+	sprintf(NetPlay.ActionMsg, "SERVER: Sending freeze-file to player %d...", c + 1);
+	S9xNPSetAction(NetPlay.ActionMsg, TRUE);
+	uint8 header[7];
+	uint8* ptr = header;
+
+	*ptr++ = NP_SERV_MAGIC;
+	*ptr++ = NPServer.Clients[c].SendSequenceNum++;;
+	*ptr++ = NP_SERV_DKC_SWITCH_HOST;
+	WRITE_LONG(ptr, NPServer.FrameCount);
+	if (!S9xNPSSendData(NPServer.Clients[c].Socket, header, 7))
+		S9xNPShutdownClient(c, TRUE);
 }
 
 void S9xNPServerAddTask (uint32 task, void *data)

@@ -60,6 +60,8 @@ bool8 S9xNPGetROMImage (uint32 len);
 void S9xNPGetSRAMData (uint32 len);
 void S9xNPGetFreezeFile (uint32 len);
 
+HANDLE dkc_clientThreadHandle = nullptr;
+
 unsigned long START = 0;
 
 bool8 S9xNPConnect ();
@@ -96,7 +98,7 @@ bool8 S9xNPConnectToServer (const char *hostname, int port,
     if (NetPlay.ReplyEvent == NULL)
         NetPlay.ReplyEvent = CreateEvent (NULL, FALSE, FALSE, NULL);
 
-    _beginthread (S9xNPClientLoop, 0, NULL);
+    dkc_clientThreadHandle = (HANDLE)_beginthread (S9xNPClientLoop, 0, NULL);
 
     return (TRUE);
 #endif
@@ -532,6 +534,15 @@ bool8 S9xNPWaitForHeartBeat ()
                 S9xNPResetJoypadReadPos ();
                 S9xNPSendReady ();
                 break;
+            case NP_SERV_DKC_SWITCH_HOST:
+            {
+#ifdef NP_DEBUG
+				printf("CLIENT: DKC_SWITCH_HOST received @%ld\n", S9xGetMilliTime() - START);
+#endif
+                S9xNPDisconnect();
+                Sleep(300);
+                EnableServer(!Settings.NetPlayServer);
+            } break;
             default:
 #ifdef NP_DEBUG
                 printf ("CLIENT: UNKNOWN received @%ld\n", S9xGetMilliTime () - START);
@@ -837,6 +848,11 @@ void S9xNPDisconnect ()
     NetPlay.Socket = -1;
     NetPlay.Connected = FALSE;
     Settings.NetPlay = FALSE;
+
+    /*if (dkc_clientThreadHandle != nullptr)
+    {
+        WaitForSingleObject(dkc_clientThreadHandle, INFINITE);
+    }*/
 }
 
 bool8 S9xNPSendData (int socket, const uint8 *data, int length)

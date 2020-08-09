@@ -27,7 +27,7 @@
 #endif
 
 #define NP_VERSION 10
-#define NP_JOYPAD_HIST_SIZE 120
+#define NP_JOYPAD_HIST_SIZE 320
 #define NP_DEFAULT_PORT 6096
 
 #define NP_MAX_CLIENTS 8
@@ -59,6 +59,7 @@
 #define NP_SERV_READY 8
 // ...
 #define NP_SERV_JOYPAD_SWAP 12
+#define NP_SERV_DKC_SWITCH_HOST 13
 
 struct SNPClient
 {
@@ -195,6 +196,7 @@ void S9xNPServerQueueSendingFreezeFile (const char *filename);
 void S9xNPServerQueueSyncAll ();
 void S9xNPServerQueueSendingROMImage ();
 void S9xNPServerQueueSendingLoadROMRequest (const char *filename);
+void S9xSendDKCSwitchHostToClient(int c);
 
 void S9xNPServerAddTask (uint32 task, void *data);
 

@@ -473,9 +473,6 @@ static void ResetFrameTimer ();
 static bool LoadROM (const TCHAR *filename, const TCHAR *filename2 = NULL);
 static bool LoadROMMulti (const TCHAR *filename, const TCHAR *filename2);
 bool8 S9xLoadROMImage (const TCHAR *string);
-#ifdef NETPLAY_SUPPORT
-static void EnableServer (bool8 enable);
-#endif
 void WinDeleteRecentGamesList ();
 const TCHAR* WinParseCommandLineAndLoadConfigFile (TCHAR *line);
 void WinRegisterConfigItems ();
@@ -485,11 +482,34 @@ void WinLockConfigFile ();
 void WinUnlockConfigFile ();
 void WinCleanupConfigData ();
 
+extern std::string dkc_peerHostName;
+extern int dkc_player;
+extern int dkc_otherPlayer;
+
 #include "../ppu.h"
 #include "../snapshot.h"
 void S9xSetRecentGames ();
 void S9xAddToRecentGames (const TCHAR *filename);
 void S9xRemoveFromRecentGames (int i);
+
+void DKC_SwitchHost()
+{
+	if (Settings.NetPlayServer)
+	{
+		S9xSendDKCSwitchHostToClient(1);
+		Sleep(300);
+		EnableServer(!Settings.NetPlayServer);
+		Sleep(300);
+		S9xSetPause(PAUSE_NETPLAY_CONNECT);
+		Sleep(2000);
+
+		if (!S9xNPConnectToServer(dkc_peerHostName.c_str(), Settings.Port,
+			Memory.ROMName))
+		{
+			S9xClearPause(PAUSE_NETPLAY_CONNECT);
+		}
+	}
+}
 
 static void absToRel(TCHAR* relPath, const TCHAR* absPath, const TCHAR* baseDir)
 {
@@ -1903,6 +1923,8 @@ LRESULT CALLBACK WinProc(
 #ifdef NETPLAY_SUPPORT
 		case ID_NETPLAY_SERVER:
             S9xRestoreWindowTitle ();
+			dkc_player = 0;
+			dkc_otherPlayer = 1;
             EnableServer (!Settings.NetPlayServer);
 			if(Settings.NetPlayServer)
 			{
@@ -1923,13 +1945,18 @@ LRESULT CALLBACK WinProc(
 				}
 			}
             break;
+		case ID_DKC_SWITCH_HOST:
+		{
+			DKC_SwitchHost();
+		} break;
         case ID_NETPLAY_CONNECT:
             RestoreGUIDisplay ();
 			if(1<=DialogBoxParam(g_hInst, MAKEINTRESOURCE(IDD_NETCONNECT), hWnd, DlgNetConnect,(LPARAM)&hostname))
 
             {
 
-
+				dkc_player = 1;
+				dkc_otherPlayer = 0;
 				S9xSetPause (PAUSE_NETPLAY_CONNECT);
 
 				if (!S9xNPConnectToServer (_tToChar(hostname), Settings.Port,
@@ -3571,6 +3598,26 @@ int WINAPI WinMain(
                     SetCursor (NULL);
             }
         }
+
+		// DKC : Check if we're controlling Donkey or Diddy and switch host if needed
+		if (Settings.NetPlayServer)
+		{
+			uint8_t character = 0;
+			const int address = 0x7E056F - 0x7E0000;
+			const uint8* source;
+			if (address < 0x20000)
+				source = Memory.RAM + address;
+			else if (address < 0x30000)
+				source = Memory.SRAM + address - 0x20000;
+			else
+				source = Memory.FillRAM + address - 0x30000;
+			CopyMemory(&character, source, sizeof(uint8_t));
+
+			if (character - 1 != dkc_player)
+			{
+				DKC_SwitchHost();
+			}
+		}
     }
 
 loop_exit:
