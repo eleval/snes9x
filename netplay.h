@@ -27,7 +27,7 @@
 #endif
 
 #define NP_VERSION 10
-#define NP_JOYPAD_HIST_SIZE 320
+#define NP_JOYPAD_HIST_SIZE 120
 #define NP_DEFAULT_PORT 6096
 
 #define NP_MAX_CLIENTS 8
@@ -83,7 +83,8 @@ enum {
     NP_SERVER_SEND_ROM_LOAD_REQUEST_ALL,
     NP_SERVER_RESET_ALL,
     NP_SERVER_SEND_SRAM_ALL,
-    NP_SERVER_SEND_SRAM
+    NP_SERVER_SEND_SRAM,
+    NP_SERVER_SEND_DKC_SWITCH_HOST
 };
 
 #define NP_MAX_TASKS 20
@@ -196,7 +197,6 @@ void S9xNPServerQueueSendingFreezeFile (const char *filename);
 void S9xNPServerQueueSyncAll ();
 void S9xNPServerQueueSendingROMImage ();
 void S9xNPServerQueueSendingLoadROMRequest (const char *filename);
-void S9xSendDKCSwitchHostToClient(int c);
 
 void S9xNPServerAddTask (uint32 task, void *data);
 
