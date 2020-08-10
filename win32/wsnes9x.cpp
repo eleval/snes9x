@@ -3602,9 +3602,26 @@ int WINAPI WinMain(
 		// DKC : Check if we're controlling Donkey or Diddy and switch host if needed
 		if (Settings.NetPlayServer)
 		{
+			int address = 0;
+			if (strcmp(Memory.ROMName, "DONKEY KONG COUNTRY") == 0)
+			{
+				// DKC1 : 0x7E0044 = Character, 0x7E056F = Player
+				address = 0x7E0044;
+			}
+			else if (strcmp(Memory.ROMName, "DIDDY'S KONG QUEST") == 0)
+			{
+				// DKC2 : 0x7E08A4 = Character, 0x7E08A2 = Player
+				address = 0x7E08A4;
+			}
+			else if (strcmp(Memory.ROMName, "DONKEY KONG COUNTRY 31") == 0)
+			{
+				// DKC3 : 0x7E05B5 = Character, 0x7E05B3 = Player
+				address = 0x7E05B5;
+			}
+
+			address -= 0x7E0000;
+
 			uint8_t character = 0;
-			const int address = 0x7E0044 - 0x7E0000;
-			//const int address = 0x7E056F - 0x7E0000;
 			const uint8* source;
 			if (address < 0x20000)
 				source = Memory.RAM + address;
