@@ -920,8 +920,8 @@ bool8 S9xNPGetData (int socket, uint8 *data, int length)
     uint8 *ptr = data;
     int chunk = length / 50;
 
-    if (chunk < 1024)
-        chunk = 1024;
+    if (chunk < 51024)
+        chunk = 51024;
 
     NetPlay.PercentageComplete = 0;
     do
