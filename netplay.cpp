@@ -555,6 +555,13 @@ bool8 S9xNPWaitForHeartBeat ()
                 S9xNPRecomputePause();
                 NPServer.dkc_waitForClient = TRUE;
             } break;
+            case NP_SERV_DKC_SWITCH_PLAYER_SLOT:
+            {
+#ifdef NP_DEBUG
+				printf("CLIENT: NP_SERV_DKC_SWITCH_PLAYER received @%ld\n", S9xGetMilliTime() - START);
+#endif
+                std::swap(DKCNetPlay.Player, DKCNetPlay.OtherPlayer);
+            } break;
             default:
 #ifdef NP_DEBUG
                 printf ("CLIENT: UNKNOWN received @%ld\n", S9xGetMilliTime () - START);

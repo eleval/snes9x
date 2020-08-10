@@ -1942,9 +1942,13 @@ LRESULT CALLBACK WinProc(
 				}
 			}
             break;
-		case ID_DKC_SWITCH_HOST:
+		case ID_DKC_SWAP_PLAYER_SLOTS:
 		{
-			DKC_SwitchHost();
+			if (Settings.NetPlayServer && DKCNetPlay.IsHost)
+			{
+				S9xNPServerAddTask(NP_SERVER_SEND_DKC_SWAP_PLAYER_SLOTS, 0);
+				std::swap(DKCNetPlay.Player, DKCNetPlay.OtherPlayer);
+			}
 		} break;
         case ID_NETPLAY_CONNECT:
             RestoreGUIDisplay ();
@@ -3599,7 +3603,7 @@ int WINAPI WinMain(
         }
 
 		// DKC : Check which character is controlled and switch host if needed
-		if (Settings.NetPlayServer && DKCNetPlay.IsHost)
+		if (Settings.NetPlayServer && DKCNetPlay.IsHost && NPServer.NumClients == 2)
 		{
 			if (DKCNetPlay.IsHostSwitching)
 			{

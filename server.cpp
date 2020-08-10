@@ -75,6 +75,7 @@ void S9xNPSendROMLoadRequest (const char *filename);
 void S9xNPSendFreezeFileToAllClients (const char *filename);
 void S9xNPStopServer ();
 void S9xSendDKCSwitchHostToClient(int c);
+void S9xSendDKCSwitchPlayerToClient(int c);
 
 void S9xNPShutdownClient (int c, bool8 report_error = FALSE)
 {
@@ -883,6 +884,9 @@ void S9xNPServerLoop (void *)
                 case NP_SERVER_SEND_DKC_SWITCH_HOST:
                     S9xSendDKCSwitchHostToClient(1);
                     break;
+                case NP_SERVER_SEND_DKC_SWAP_PLAYER_SLOTS:
+                    S9xSendDKCSwitchPlayerToClient(1);
+                    break;
 
                 default:
                     S9xNPSetError ("SERVER: *** Unknown task ***\n");
@@ -1255,6 +1259,25 @@ void S9xSendDKCSwitchHostToClient(int c)
 	*ptr++ = NP_SERV_MAGIC;
 	*ptr++ = NPServer.Clients[c].SendSequenceNum++;;
 	*ptr++ = NP_SERV_DKC_SWITCH_HOST;
+	WRITE_LONG(ptr, NPServer.FrameCount);
+	if (!S9xNPSSendData(NPServer.Clients[c].Socket, header, 7))
+		S9xNPShutdownClient(c, TRUE);
+}
+
+void S9xSendDKCSwitchPlayerToClient(int c)
+{
+#ifdef NP_DEBUG
+	printf("SERVER: Sending Switch Host to player %d @%ld\n", c + 1, S9xGetMilliTime() - START);
+#endif
+
+	sprintf(NetPlay.ActionMsg, "SERVER: Sending Switch Host to player %d...", c + 1);
+	S9xNPSetAction(NetPlay.ActionMsg, TRUE);
+	uint8 header[7];
+	uint8* ptr = header;
+
+	*ptr++ = NP_SERV_MAGIC;
+	*ptr++ = NPServer.Clients[c].SendSequenceNum++;;
+	*ptr++ = NP_SERV_DKC_SWITCH_PLAYER_SLOT;
 	WRITE_LONG(ptr, NPServer.FrameCount);
 	if (!S9xNPSSendData(NPServer.Clients[c].Socket, header, 7))
 		S9xNPShutdownClient(c, TRUE);
