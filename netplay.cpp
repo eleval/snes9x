@@ -95,8 +95,12 @@ bool8 S9xNPConnectToServer (const char *hostname, int port,
     NetPlay.PendingWait4Sync = FALSE;
 
 #ifdef __WIN32__
-    if (GUI.ClientSemaphore == NULL)
-        GUI.ClientSemaphore = CreateSemaphore (NULL, 0, NP_JOYPAD_HIST_SIZE, NULL);
+    if (GUI.ClientSemaphore != NULL)
+    {
+        CloseHandle(GUI.ClientSemaphore);
+    }
+
+    GUI.ClientSemaphore = CreateSemaphore (NULL, 0, NP_JOYPAD_HIST_SIZE, NULL);
 
     if (NetPlay.ReplyEvent == NULL)
         NetPlay.ReplyEvent = CreateEvent (NULL, FALSE, FALSE, NULL);
