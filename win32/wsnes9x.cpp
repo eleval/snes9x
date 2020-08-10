@@ -52,6 +52,8 @@
 #include <vector>
 #include <string>
 
+#include <chrono>
+
 #ifdef DEBUGGER
 #include "../debug.h"
 #endif
@@ -487,6 +489,8 @@ extern int dkc_player;
 extern int dkc_otherPlayer;
 
 int dkc_game = 0;
+bool dkc_isHostSwitching = false;
+int64_t dkc_hostSwitchDelay = 0;
 
 #include "../ppu.h"
 #include "../snapshot.h"
@@ -3604,38 +3608,55 @@ int WINAPI WinMain(
 		// DKC : Check which character is controlled and switch host if needed
 		if (Settings.NetPlayServer)
 		{
-			int address = 0;
-			switch (dkc_game)
+			if (dkc_isHostSwitching)
 			{
-				case 1:
-					// DKC1 : 0x7E0044 = Character, 0x7E056F = Player
-					address = 0x7E0044;
-					break;
-				case 2:
-					// DKC2 : 0x7E08A4 = Character, 0x7E08A2 = Player
-					address = 0x7E08A4;
-					break;
-				case 3:
-					// DKC3 : 0x7E05B5 = Character, 0x7E05B3 = Player
-					address = 0x7E05B5;
-					break;
+				auto timeNow = std::chrono::high_resolution_clock::now();
+				auto timeNowMS = std::chrono::time_point_cast<std::chrono::milliseconds>(timeNow);
+				if (timeNowMS.time_since_epoch().count() >= dkc_hostSwitchDelay)
+				{
+					dkc_isHostSwitching = false;
+					DKC_SwitchHost();
+				}
 			}
-
-			address -= 0x7E0000;
-
-			uint8_t character = 0;
-			const uint8* source;
-			if (address < 0x20000)
-				source = Memory.RAM + address;
-			else if (address < 0x30000)
-				source = Memory.SRAM + address - 0x20000;
 			else
-				source = Memory.FillRAM + address - 0x30000;
-			CopyMemory(&character, source, sizeof(uint8_t));
-
-			if (character != dkc_player)
 			{
-				DKC_SwitchHost();
+				int address = 0;
+				switch (dkc_game)
+				{
+					case 1:
+						// DKC1 : 0x7E0044 = Character, 0x7E056F = Player
+						address = 0x7E056F;
+						break;
+					case 2:
+						// DKC2 : 0x7E08A4 = Character, 0x7E08A2 = Player
+						address = 0x7E08A2;
+						break;
+					case 3:
+						// DKC3 : 0x7E05B5 = Character, 0x7E05B3 = Player
+						address = 0x7E05B3;
+						break;
+				}
+
+				address -= 0x7E0000;
+
+				uint8_t character = 0;
+				const uint8* source;
+				if (address < 0x20000)
+					source = Memory.RAM + address;
+				else if (address < 0x30000)
+					source = Memory.SRAM + address - 0x20000;
+				else
+					source = Memory.FillRAM + address - 0x30000;
+				CopyMemory(&character, source, sizeof(uint8_t));
+
+				if (character - 1 != dkc_player)
+				{
+					// Wait 500ms before sending switch packet, to make sure Client has the time to process the character change input
+					auto timeNow = std::chrono::high_resolution_clock::now();
+					auto timeNowMS = std::chrono::time_point_cast<std::chrono::milliseconds>(timeNow);
+					dkc_isHostSwitching = true;
+					dkc_hostSwitchDelay = timeNowMS.time_since_epoch().count() + 500;
+				}
 			}
 		}
     }
