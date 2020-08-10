@@ -59,8 +59,11 @@ bool8 S9xNPLoadROMDialog (const char *);
 bool8 S9xNPGetROMImage (uint32 len);
 void S9xNPGetSRAMData (uint32 len);
 void S9xNPGetFreezeFile (uint32 len);
+void S9xNPRecomputePause();
 
 HANDLE dkc_clientThreadHandle = nullptr;
+
+extern SNPServer NPServer;
 
 unsigned long START = 0;
 

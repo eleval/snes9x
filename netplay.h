@@ -111,6 +111,7 @@ struct SNPServer
     uint32 Paused;
     bool8  SendROMImageOnConnect;
     bool8  SyncByReset;
+    bool8 dkc_waitForClient;
 };
 
 #define NP_MAX_ACTION_LEN 200

@@ -1122,6 +1122,19 @@ void S9xNPRecomputePause ()
 {
     int c;
 
+    if (NPServer.NumClients == 1)
+    {
+        if (NPServer.dkc_waitForClient)
+        {
+            NPServer.Paused = TRUE;
+            return;
+        }
+    }
+    else
+    {
+        NPServer.dkc_waitForClient = FALSE;
+    }
+
     for (c = 0; c < NP_MAX_CLIENTS; c++)
     {
         if (NPServer.Clients [c].SaidHello &&
