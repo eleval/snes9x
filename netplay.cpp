@@ -545,6 +545,8 @@ bool8 S9xNPWaitForHeartBeat ()
                 S9xNPDisconnect();
                 Sleep(300);
                 EnableServer(!Settings.NetPlayServer);
+                S9xNPRecomputePause();
+                NPServer.dkc_waitForClient = TRUE;
             } break;
             default:
 #ifdef NP_DEBUG
