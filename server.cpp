@@ -942,11 +942,11 @@ void S9xNPStopServer ()
 	    S9xNPShutdownClient(i, FALSE);
     }
 
-    if (dkc_serverThreadHandle != nullptr)
+    /*if (dkc_serverThreadHandle != nullptr)
     {
         WaitForSingleObject(dkc_serverThreadHandle, INFINITE);
         
-    }
+    }*/
 }
 
 #ifdef __WIN32__
