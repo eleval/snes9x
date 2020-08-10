@@ -544,9 +544,14 @@ bool8 S9xNPWaitForHeartBeat ()
 #ifdef NP_DEBUG
 				printf("CLIENT: DKC_SWITCH_HOST received @%ld\n", S9xGetMilliTime() - START);
 #endif
+                S9xSetPause(PAUSE_NETPLAY_CONNECT);
                 S9xNPDisconnect();
-                Sleep(300);
-                EnableServer(!Settings.NetPlayServer);
+				DKCNetPlay.IsHost = true;
+                if (!ConnectToLocalServer())
+                {
+                    S9xClearPause(PAUSE_NETPLAY_CONNECT);
+                    break;
+                }
                 S9xNPRecomputePause();
                 NPServer.dkc_waitForClient = TRUE;
             } break;
@@ -1036,7 +1041,7 @@ void S9xNPSetAction (const char *action, bool8 force)
 #ifdef NP_DEBUG
     printf ("NPSetAction: %s, forced = %d %ld\n", action, force, S9xGetMilliTime () - START);
 #endif
-    if (force || !Settings.NetPlayServer)
+    if (force || !Settings.NetPlayServer || !DKCNetPlay.IsHost)
     {
         strncpy (NetPlay.ActionMsg, action, NP_MAX_ACTION_LEN - 1);
         NetPlay.ActionMsg [NP_MAX_ACTION_LEN - 1] = 0;

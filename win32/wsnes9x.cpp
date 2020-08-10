@@ -492,14 +492,12 @@ void S9xRemoveFromRecentGames (int i);
 
 void DKC_SwitchHost()
 {
-	if (Settings.NetPlayServer)
+	if (DKCNetPlay.IsHost)
 	{
 		S9xNPServerAddTask(NP_SERVER_SEND_DKC_SWITCH_HOST, 0);
 		Sleep(300);
-		EnableServer(!Settings.NetPlayServer);
-		Sleep(300);
+		DKCNetPlay.IsHost = false;
 		S9xSetPause(PAUSE_NETPLAY_CONNECT);
-		Sleep(2000);
 
 		if (!S9xNPConnectToServer(DKCNetPlay.PeerHostName.c_str(), Settings.Port,
 			Memory.ROMName))
@@ -1923,7 +1921,8 @@ LRESULT CALLBACK WinProc(
             S9xRestoreWindowTitle ();
 			DKCNetPlay.Player = 0;
 			DKCNetPlay.OtherPlayer = 1;
-            EnableServer (!Settings.NetPlayServer);
+			DKCNetPlay.IsHost = true;
+            EnableServer (!Settings.NetPlayServer, TRUE);
 			if(Settings.NetPlayServer)
 			{
 				TCHAR localhostmsg [512];
@@ -1952,11 +1951,12 @@ LRESULT CALLBACK WinProc(
 			if(1<=DialogBoxParam(g_hInst, MAKEINTRESOURCE(IDD_NETCONNECT), hWnd, DlgNetConnect,(LPARAM)&hostname))
 
             {
-
 				DKCNetPlay.Player = 1;
 				DKCNetPlay.OtherPlayer = 0;
+				DKCNetPlay.IsHost = false;
 				S9xSetPause (PAUSE_NETPLAY_CONNECT);
 
+				EnableServer(!Settings.NetPlayServer, FALSE);
 				if (!S9xNPConnectToServer (_tToChar(hostname), Settings.Port,
 					Memory.ROMName))
                 {
@@ -1988,7 +1988,7 @@ LRESULT CALLBACK WinProc(
 					{
 						Settings.NetPlayServer = old_netplay_server;
 						S9xRestoreWindowTitle ();
-						EnableServer (!Settings.NetPlayServer);
+						EnableServer (!Settings.NetPlayServer, TRUE);
 					}
 				}
 				RestoreSNESDisplay ();
@@ -2179,8 +2179,11 @@ LRESULT CALLBACK WinProc(
 #ifdef NETPLAY_SUPPORT
 			if (Settings.NetPlayServer)
 			{
-				S9xNPReset ();
-				ReInitSound();
+				if (DKCNetPlay.IsHost)
+				{
+					S9xNPReset();
+					ReInitSound();
+				}
 			}
 			else
 				if (!Settings.NetPlay)
@@ -2850,7 +2853,7 @@ void CALLBACK FrameTimer( UINT idEvent, UINT uMsg, DWORD dwUser, DWORD dw1, DWOR
 #ifdef NETPLAY_SUPPORT
 		//    if (Settings.NetPlay && !Settings.NetPlayServer)
 		//        return;
-        if (Settings.NetPlay && !Settings.NetPlayServer)
+        if (Settings.NetPlay && (!Settings.NetPlayServer || !DKCNetPlay.IsHost))
             return;
 
 		//-    if (Settings.NetPlayServer)
@@ -3316,7 +3319,6 @@ static void ProcessInput(void)
 
 
 
-
 /*****************************************************************************/
 /* WinMain                                                                   */
 /*****************************************************************************/
@@ -3329,8 +3331,7 @@ int WINAPI WinMain(
 				   int nCmdShow)
 {
 	Settings.StopEmulation = TRUE;
-
-	SetCurrentDirectory(S9xGetDirectoryT(DEFAULT_DIR));
+	//SetCurrentDirectory(S9xGetDirectoryT(DEFAULT_DIR));
 
 	// Redirect stderr and stdout to file. It wouldn't go to any commandline anyway.
 	FILE* fout = freopen("stdout.txt", "w", stdout);
@@ -3598,7 +3599,7 @@ int WINAPI WinMain(
         }
 
 		// DKC : Check which character is controlled and switch host if needed
-		if (Settings.NetPlayServer)
+		if (Settings.NetPlayServer && DKCNetPlay.IsHost)
 		{
 			if (DKCNetPlay.IsHostSwitching)
 			{
@@ -3770,7 +3771,7 @@ void FreezeUnfreezeSlot(int slot, bool8 freeze)
 void FreezeUnfreeze (const char *filename, bool8 freeze)
 {
 #ifdef NETPLAY_SUPPORT
-    if (!freeze && Settings.NetPlay && !Settings.NetPlayServer)
+    if (!freeze && Settings.NetPlay && (!Settings.NetPlayServer || !DKCNetPlay.IsHost))
     {
         S9xMessage (S9X_INFO, S9X_NETPLAY_NOT_SERVER,
 			"Only the server is allowed to load freeze files.");
@@ -4153,7 +4154,7 @@ static bool LoadROMMulti(const TCHAR *filename, const TCHAR *filename2)
 static bool LoadROM(const TCHAR *filename, const TCHAR *filename2 /*= NULL*/) {
 
 #ifdef NETPLAY_SUPPORT
-	if (Settings.NetPlay && !Settings.NetPlayServer)
+	if (Settings.NetPlay && (!Settings.NetPlayServer || !DKCNetPlay.IsHost))
 	{
 		S9xMessage (S9X_INFO, S9X_NETPLAY_NOT_SERVER,
 			WINPROC_DISCONNECT);
@@ -4232,7 +4233,7 @@ bool8 S9xLoadROMImage (const TCHAR *string)
 
 /*****************************************************************************/
 #ifdef NETPLAY_SUPPORT
-void EnableServer (bool8 enable)
+void EnableServer (bool8 enable, bool8 autoConnect)
 {
     if (enable != Settings.NetPlayServer)
     {
@@ -4248,11 +4249,13 @@ void EnableServer (bool8 enable)
             Settings.NetPlayServer = S9xNPStartServer (Settings.Port);
             Sleep (1000);
 
-            if (!S9xNPConnectToServer ("127.0.0.1", Settings.Port,
-				Memory.ROMName))
-            {
-                S9xClearPause (PAUSE_NETPLAY_CONNECT);
-            }
+			if (autoConnect)
+			{
+				if (!ConnectToLocalServer())
+				{
+					S9xClearPause(PAUSE_NETPLAY_CONNECT);
+				}
+			}
         }
         else
         {
@@ -4260,6 +4263,11 @@ void EnableServer (bool8 enable)
             S9xNPStopServer ();
         }
     }
+}
+
+bool8 ConnectToLocalServer()
+{
+	return S9xNPConnectToServer("127.0.0.1", Settings.Port, Memory.ROMName);
 }
 #endif
 

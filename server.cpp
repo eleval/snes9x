@@ -490,7 +490,7 @@ void S9xNPProcessClient (int c)
             }
             break;
         case NP_CLNT_JOYPAD:
-            if (Settings.NetPlayServer)
+            if (Settings.NetPlayServer && DKCNetPlay.IsHost)
             {
                 if (c == 0)
                 {
@@ -1247,7 +1247,7 @@ void S9xSendDKCSwitchHostToClient(int c)
 	printf("SERVER: Sending Switch Host to player %d @%ld\n", c + 1, S9xGetMilliTime() - START);
 #endif
 
-	sprintf(NetPlay.ActionMsg, "SERVER: Sending freeze-file to player %d...", c + 1);
+	sprintf(NetPlay.ActionMsg, "SERVER: Sending Switch Host to player %d...", c + 1);
 	S9xNPSetAction(NetPlay.ActionMsg, TRUE);
 	uint8 header[7];
 	uint8* ptr = header;
@@ -1295,7 +1295,7 @@ void S9xNPWaitForEmulationToComplete ()
 
 void S9xNPServerQueueSyncAll ()
 {
-    if (Settings.NetPlay && Settings.NetPlayServer &&
+    if (Settings.NetPlay && Settings.NetPlayServer && DKCNetPlay.IsHost &&
         NPServer.NumClients > NP_ONE_CLIENT)
     {
         S9xNPNoClientReady ();
@@ -1306,7 +1306,7 @@ void S9xNPServerQueueSyncAll ()
 
 void S9xNPServerQueueSendingROMImage ()
 {
-    if (Settings.NetPlay && Settings.NetPlayServer &&
+    if (Settings.NetPlay && Settings.NetPlayServer && DKCNetPlay.IsHost &&
         NPServer.NumClients > NP_ONE_CLIENT)
     {
         S9xNPNoClientReady ();
@@ -1317,7 +1317,7 @@ void S9xNPServerQueueSendingROMImage ()
 
 void S9xNPServerQueueSendingFreezeFile (const char *filename)
 {
-    if (Settings.NetPlay && Settings.NetPlayServer &&
+    if (Settings.NetPlay && Settings.NetPlayServer && DKCNetPlay.IsHost &&
         NPServer.NumClients > NP_ONE_CLIENT)
     {
         S9xNPNoClientReady ();
@@ -1329,7 +1329,7 @@ void S9xNPServerQueueSendingFreezeFile (const char *filename)
 
 void S9xNPServerQueueSendingLoadROMRequest (const char *filename)
 {
-    if (Settings.NetPlay && Settings.NetPlayServer &&
+    if (Settings.NetPlay && Settings.NetPlayServer && DKCNetPlay.IsHost &&
         NPServer.NumClients > NP_ONE_CLIENT)
     {
         S9xNPNoClientReady ();
