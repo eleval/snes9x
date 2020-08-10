@@ -486,6 +486,8 @@ extern std::string dkc_peerHostName;
 extern int dkc_player;
 extern int dkc_otherPlayer;
 
+int dkc_game = 0;
+
 #include "../ppu.h"
 #include "../snapshot.h"
 void S9xSetRecentGames ();
@@ -3599,24 +3601,24 @@ int WINAPI WinMain(
             }
         }
 
-		// DKC : Check if we're controlling Donkey or Diddy and switch host if needed
+		// DKC : Check which character is controlled and switch host if needed
 		if (Settings.NetPlayServer)
 		{
 			int address = 0;
-			if (strcmp(Memory.ROMName, "DONKEY KONG COUNTRY") == 0)
+			switch (dkc_game)
 			{
-				// DKC1 : 0x7E0044 = Character, 0x7E056F = Player
-				address = 0x7E0044;
-			}
-			else if (strcmp(Memory.ROMName, "DIDDY'S KONG QUEST") == 0)
-			{
-				// DKC2 : 0x7E08A4 = Character, 0x7E08A2 = Player
-				address = 0x7E08A4;
-			}
-			else if (strcmp(Memory.ROMName, "DONKEY KONG COUNTRY 31") == 0)
-			{
-				// DKC3 : 0x7E05B5 = Character, 0x7E05B3 = Player
-				address = 0x7E05B5;
+				case 1:
+					// DKC1 : 0x7E0044 = Character, 0x7E056F = Player
+					address = 0x7E0044;
+					break;
+				case 2:
+					// DKC2 : 0x7E08A4 = Character, 0x7E08A2 = Player
+					address = 0x7E08A4;
+					break;
+				case 3:
+					// DKC3 : 0x7E05B5 = Character, 0x7E05B3 = Player
+					address = 0x7E05B5;
+					break;
 			}
 
 			address -= 0x7E0000;
@@ -11132,6 +11134,20 @@ void S9xPostRomInit()
 
 		// update menu and remember what (if anything) the control was forced from
 		GUI.ControlForced = prevController;
+	}
+
+	// Check if this is a DKC ROM and set which one it is
+	if (strcmp(Memory.ROMName, "DONKEY KONG COUNTRY") == 0)
+	{
+		dkc_game = 1;
+	}
+	else if (strcmp(Memory.ROMName, "DIDDY'S KONG QUEST") == 0)
+	{
+		dkc_game = 2;
+	}
+	else if (strcmp(Memory.ROMName, "DONKEY KONG COUNTRY 31") == 0)
+	{
+		dkc_game = 3;
 	}
 
 	// reset fast-forward and other input-related GUI state
