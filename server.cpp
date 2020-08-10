@@ -76,12 +76,6 @@ void S9xNPSendFreezeFileToAllClients (const char *filename);
 void S9xNPStopServer ();
 void S9xSendDKCSwitchHostToClient(int c);
 
-// DKC Hack
-std::string dkc_peerHostName;
-int dkc_player = 0;
-int dkc_otherPlayer = 1;
-HANDLE dkc_serverThreadHandle = nullptr;
-
 void S9xNPShutdownClient (int c, bool8 report_error = FALSE)
 {
     if (NPServer.Clients [c].Connected)
@@ -500,11 +494,11 @@ void S9xNPProcessClient (int c)
             {
                 if (c == 0)
                 {
-                    NPServer.Joypads[dkc_player] = len;
+                    NPServer.Joypads[DKCNetPlay.Player] = len;
                 }
                 else if (c == 1)
                 {
-                    NPServer.Joypads[dkc_otherPlayer] = len;
+                    NPServer.Joypads[DKCNetPlay.OtherPlayer] = len;
                 }
             }
             break;
@@ -613,7 +607,7 @@ void S9xNPAcceptClient (int Listen, bool8 block)
 
     if (i == 1)
     {
-        dkc_peerHostName = NPServer.Clients[i].HostName;
+        DKCNetPlay.PeerHostName = NPServer.Clients[i].HostName;
     }
 }
 
@@ -918,8 +912,7 @@ bool8 S9xNPStartServer (int port)
     server_continue = TRUE;
     if (S9xNPServerInit(port))
 #ifdef __WIN32__
-        dkc_serverThreadHandle = (HANDLE)_beginthread(S9xNPServerLoop, 0, &p);
-        return (dkc_serverThreadHandle != nullptr);
+        return _beginthread(S9xNPServerLoop, 0, &p) != 0;
 #else
     S9xNPServerLoop(NULL);
     return (TRUE);
@@ -941,12 +934,6 @@ void S9xNPStopServer ()
         if (NPServer.Clients [i].Connected)
 	    S9xNPShutdownClient(i, FALSE);
     }
-
-    /*if (dkc_serverThreadHandle != nullptr)
-    {
-        WaitForSingleObject(dkc_serverThreadHandle, INFINITE);
-        
-    }*/
 }
 
 #ifdef __WIN32__

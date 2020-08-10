@@ -484,14 +484,6 @@ void WinLockConfigFile ();
 void WinUnlockConfigFile ();
 void WinCleanupConfigData ();
 
-extern std::string dkc_peerHostName;
-extern int dkc_player;
-extern int dkc_otherPlayer;
-
-int dkc_game = 0;
-bool dkc_isHostSwitching = false;
-int64_t dkc_hostSwitchDelay = 0;
-
 #include "../ppu.h"
 #include "../snapshot.h"
 void S9xSetRecentGames ();
@@ -509,7 +501,7 @@ void DKC_SwitchHost()
 		S9xSetPause(PAUSE_NETPLAY_CONNECT);
 		Sleep(2000);
 
-		if (!S9xNPConnectToServer(dkc_peerHostName.c_str(), Settings.Port,
+		if (!S9xNPConnectToServer(DKCNetPlay.PeerHostName.c_str(), Settings.Port,
 			Memory.ROMName))
 		{
 			S9xClearPause(PAUSE_NETPLAY_CONNECT);
@@ -1929,8 +1921,8 @@ LRESULT CALLBACK WinProc(
 #ifdef NETPLAY_SUPPORT
 		case ID_NETPLAY_SERVER:
             S9xRestoreWindowTitle ();
-			dkc_player = 0;
-			dkc_otherPlayer = 1;
+			DKCNetPlay.Player = 0;
+			DKCNetPlay.OtherPlayer = 1;
             EnableServer (!Settings.NetPlayServer);
 			if(Settings.NetPlayServer)
 			{
@@ -1961,8 +1953,8 @@ LRESULT CALLBACK WinProc(
 
             {
 
-				dkc_player = 1;
-				dkc_otherPlayer = 0;
+				DKCNetPlay.Player = 1;
+				DKCNetPlay.OtherPlayer = 0;
 				S9xSetPause (PAUSE_NETPLAY_CONNECT);
 
 				if (!S9xNPConnectToServer (_tToChar(hostname), Settings.Port,
@@ -3608,20 +3600,20 @@ int WINAPI WinMain(
 		// DKC : Check which character is controlled and switch host if needed
 		if (Settings.NetPlayServer)
 		{
-			if (dkc_isHostSwitching)
+			if (DKCNetPlay.IsHostSwitching)
 			{
 				auto timeNow = std::chrono::high_resolution_clock::now();
 				auto timeNowMS = std::chrono::time_point_cast<std::chrono::milliseconds>(timeNow);
-				if (timeNowMS.time_since_epoch().count() >= dkc_hostSwitchDelay)
+				if (timeNowMS.time_since_epoch().count() >= DKCNetPlay.HostSwitchDelay)
 				{
-					dkc_isHostSwitching = false;
+					DKCNetPlay.IsHostSwitching = false;
 					DKC_SwitchHost();
 				}
 			}
 			else
 			{
 				int address = 0;
-				switch (dkc_game)
+				switch (DKCNetPlay.Game)
 				{
 					case 1:
 						// DKC1 : 0x7E0044 = Character, 0x7E056F = Player
@@ -3649,13 +3641,13 @@ int WINAPI WinMain(
 					source = Memory.FillRAM + address - 0x30000;
 				CopyMemory(&character, source, sizeof(uint8_t));
 
-				if (character - 1 != dkc_player)
+				if (character - 1 != DKCNetPlay.Player)
 				{
 					// Wait 500ms before sending switch packet, to make sure Client has the time to process the character change input
 					auto timeNow = std::chrono::high_resolution_clock::now();
 					auto timeNowMS = std::chrono::time_point_cast<std::chrono::milliseconds>(timeNow);
-					dkc_isHostSwitching = true;
-					dkc_hostSwitchDelay = timeNowMS.time_since_epoch().count() + 500;
+					DKCNetPlay.IsHostSwitching = true;
+					DKCNetPlay.HostSwitchDelay = timeNowMS.time_since_epoch().count() + 500;
 				}
 			}
 		}
@@ -11160,15 +11152,15 @@ void S9xPostRomInit()
 	// Check if this is a DKC ROM and set which one it is
 	if (strcmp(Memory.ROMName, "DONKEY KONG COUNTRY") == 0)
 	{
-		dkc_game = 1;
+		DKCNetPlay.Game = 1;
 	}
 	else if (strcmp(Memory.ROMName, "DIDDY'S KONG QUEST") == 0)
 	{
-		dkc_game = 2;
+		DKCNetPlay.Game = 2;
 	}
 	else if (strcmp(Memory.ROMName, "DONKEY KONG COUNTRY 31") == 0)
 	{
-		dkc_game = 3;
+		DKCNetPlay.Game = 3;
 	}
 
 	// reset fast-forward and other input-related GUI state

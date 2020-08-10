@@ -54,6 +54,7 @@ struct SSettings		Settings;
 struct SSNESGameFixes	SNESGameFixes;
 #ifdef NETPLAY_SUPPORT
 struct SNetPlay			NetPlay;
+struct SDKCNetPlay		DKCNetPlay;
 #endif
 #ifdef DEBUGGER
 struct Missing			missing;

@@ -152,6 +152,23 @@ struct SNetPlay
 
 extern "C" struct SNetPlay NetPlay;
 
+struct SDKCNetPlay
+{
+	bool IsHost = false;
+	
+    bool IsHostSwitching = false;
+	int64_t HostSwitchDelay = 0;
+	
+    int Game = 0;
+
+    int Player = 0;
+    int OtherPlayer = 1;
+
+    std::string PeerHostName;
+};
+
+extern struct SDKCNetPlay DKCNetPlay;
+
 //
 // NETPLAY_CLIENT_HELLO message format:
 // header

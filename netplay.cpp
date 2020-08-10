@@ -61,8 +61,6 @@ void S9xNPGetSRAMData (uint32 len);
 void S9xNPGetFreezeFile (uint32 len);
 void S9xNPRecomputePause();
 
-HANDLE dkc_clientThreadHandle = nullptr;
-
 extern SNPServer NPServer;
 
 unsigned long START = 0;
@@ -105,7 +103,7 @@ bool8 S9xNPConnectToServer (const char *hostname, int port,
     if (NetPlay.ReplyEvent == NULL)
         NetPlay.ReplyEvent = CreateEvent (NULL, FALSE, FALSE, NULL);
 
-    dkc_clientThreadHandle = (HANDLE)_beginthread (S9xNPClientLoop, 0, NULL);
+    _beginthread (S9xNPClientLoop, 0, NULL);
 
     return (TRUE);
 #endif
@@ -857,11 +855,6 @@ void S9xNPDisconnect ()
     NetPlay.Socket = -1;
     NetPlay.Connected = FALSE;
     Settings.NetPlay = FALSE;
-
-    /*if (dkc_clientThreadHandle != nullptr)
-    {
-        WaitForSingleObject(dkc_clientThreadHandle, INFINITE);
-    }*/
 }
 
 bool8 S9xNPSendData (int socket, const uint8 *data, int length)
