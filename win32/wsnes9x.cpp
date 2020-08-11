@@ -507,6 +507,24 @@ void DKC_SwitchHost()
 	}
 }
 
+template<typename T>
+T GetValueAtAddress(int address)
+{
+	address -= 0x7E0000;
+
+	T value = 0;
+	const uint8* source;
+	if (address < 0x20000)
+		source = Memory.RAM + address;
+	else if (address < 0x30000)
+		source = Memory.SRAM + address - 0x20000;
+	else
+		source = Memory.FillRAM + address - 0x30000;
+	CopyMemory(&value, source, sizeof(T));
+
+	return value;
+}
+
 static void absToRel(TCHAR* relPath, const TCHAR* absPath, const TCHAR* baseDir)
 {
 	lstrcpy(relPath, absPath);
@@ -3619,52 +3637,41 @@ int WINAPI WinMain(
 			else
 			{
 				int address = 0;
+				uint8_t playerNumber = 0;
 				switch (DKCNetPlay.Game)
 				{
-					case 1:
+					case 1: // DKC1
 						// DKC1 PAL & NTSC-U : 0x7E0044 = Player, 0x7E056F = Character
 						// DKC1 NTSC-J = 0x7E057F = Character
 						switch (Memory.ROMRegion)
 						{
 							case 0: // NTSC-J
-								address = 0x7E057F;
+								playerNumber = GetValueAtAddress<uint8_t>(0x7E057F);
 							default: // NTSC-U & PAL
-								address = 0x7E056F;
+								playerNumber = GetValueAtAddress<uint8_t>(0x7E056F);
 								break;
 						}
 						break;
-					case 2:
+					case 2: // DKC2
 						// DKC2 : 0x7E08A4 = Player, 0x7E08A2 = Character (same for all regions)
-						address = 0x7E08A2;
+						playerNumber = GetValueAtAddress<uint8_t>(0x7E08A2);
 						break;
-					case 3:
+					case 3: // DKC3
 						// DKC3 : 0x7E05B5 = Player, 0x7E05B3 = Character (0x7E003B & 0x7E05BB for Player, 0x7E05B9 for Character in PAL & NTSC-J)
 						address = 0x7E05B3;
 						switch (Memory.ROMRegion)
 						{
 							case 1: // NTSC-U
-								address = 0x7E05B3;
+								playerNumber = GetValueAtAddress<uint8_t>(0x7E05B3);
 								break;
 							default: // NTSC-J & PAL
-								address = 0x7E05B9;
+								playerNumber = GetValueAtAddress<uint8_t>(0x7E05B9);
 								break;
 						}
 						break;
 				}
 
-				address -= 0x7E0000;
-
-				uint8_t character = 0;
-				const uint8* source;
-				if (address < 0x20000)
-					source = Memory.RAM + address;
-				else if (address < 0x30000)
-					source = Memory.SRAM + address - 0x20000;
-				else
-					source = Memory.FillRAM + address - 0x30000;
-				CopyMemory(&character, source, sizeof(uint8_t));
-
-				if (character - 1 != DKCNetPlay.Player)
+				if (playerNumber - 1 != DKCNetPlay.Player)
 				{
 					// Wait 500ms before sending switch packet, to make sure Client has the time to process the character change input
 					auto timeNow = std::chrono::high_resolution_clock::now();
