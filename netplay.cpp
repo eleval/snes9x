@@ -555,7 +555,7 @@ bool8 S9xNPWaitForHeartBeat ()
                 S9xNPRecomputePause();
                 NPServer.dkc_waitForClient = TRUE;
             } break;
-            case NP_SERV_DKC_SWITCH_PLAYER_SLOT:
+            case NP_SERV_DKC_SWAP_PLAYER_SLOTS:
             {
 #ifdef NP_DEBUG
 				printf("CLIENT: NP_SERV_DKC_SWITCH_PLAYER received @%ld\n", S9xGetMilliTime() - START);

@@ -1277,7 +1277,7 @@ void S9xSendDKCSwitchPlayerToClient(int c)
 
 	*ptr++ = NP_SERV_MAGIC;
 	*ptr++ = NPServer.Clients[c].SendSequenceNum++;;
-	*ptr++ = NP_SERV_DKC_SWITCH_PLAYER_SLOT;
+	*ptr++ = NP_SERV_DKC_SWAP_PLAYER_SLOTS;
 	WRITE_LONG(ptr, NPServer.FrameCount);
 	if (!S9xNPSSendData(NPServer.Clients[c].Socket, header, 7))
 		S9xNPShutdownClient(c, TRUE);
