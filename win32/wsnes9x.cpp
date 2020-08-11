@@ -3603,6 +3603,7 @@ int WINAPI WinMain(
         }
 
 		// DKC : Check which character is controlled and switch host if needed
+		// Unfortunately this does not work for contest mode just yet
 		if (Settings.NetPlayServer && DKCNetPlay.IsHost && NPServer.NumClients == 2)
 		{
 			if (DKCNetPlay.IsHostSwitching)
@@ -3621,16 +3622,33 @@ int WINAPI WinMain(
 				switch (DKCNetPlay.Game)
 				{
 					case 1:
-						// DKC1 : 0x7E0044 = Character, 0x7E056F = Player
-						address = 0x7E056F;
+						// DKC1 PAL & NTSC-U : 0x7E0044 = Player, 0x7E056F = Character
+						// DKC1 NTSC-J = 0x7E057F = Character
+						switch (Memory.ROMRegion)
+						{
+							case 0: // NTSC-J
+								address = 0x7E057F;
+							default: // NTSC-U & PAL
+								address = 0x7E056F;
+								break;
+						}
 						break;
 					case 2:
-						// DKC2 : 0x7E08A4 = Character, 0x7E08A2 = Player
+						// DKC2 : 0x7E08A4 = Player, 0x7E08A2 = Character (same for all regions)
 						address = 0x7E08A2;
 						break;
 					case 3:
-						// DKC3 : 0x7E05B5 = Character, 0x7E05B3 = Player
+						// DKC3 : 0x7E05B5 = Player, 0x7E05B3 = Character (0x7E003B & 0x7E05BB for Player, 0x7E05B9 for Character in PAL & NTSC-J)
 						address = 0x7E05B3;
+						switch (Memory.ROMRegion)
+						{
+							case 1: // NTSC-U
+								address = 0x7E05B3;
+								break;
+							default: // NTSC-J & PAL
+								address = 0x7E05B9;
+								break;
+						}
 						break;
 				}
 
