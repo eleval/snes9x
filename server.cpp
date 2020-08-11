@@ -76,6 +76,7 @@ void S9xNPSendFreezeFileToAllClients (const char *filename);
 void S9xNPStopServer ();
 void S9xSendDKCSwitchHostToClient(int c);
 void S9xSendDKCSwitchPlayerToClient(int c);
+void S9xSendDKCPlayerSlotToClient(int c);
 
 void S9xNPShutdownClient (int c, bool8 report_error = FALSE)
 {
@@ -472,11 +473,13 @@ void S9xNPProcessClient (int c)
 
                     if (NPServer.SyncByReset)
                     {
+                        S9xNPServerAddTask (NP_SERVER_SEND_DKC_PLAYER_SLOT, (void*)(UINT_PTR)c);
                         S9xNPServerAddTask (NP_SERVER_SEND_SRAM, (void *) (pint) c);
                         S9xNPServerAddTask (NP_SERVER_RESET_ALL, 0);
                     }
                     else
 #ifdef __WIN32__
+                        S9xNPServerAddTask (NP_SERVER_SEND_DKC_PLAYER_SLOT, (void *)(UINT_PTR) c);
                         S9xNPServerAddTask (NP_SERVER_SYNC_CLIENT, (void *)(UINT_PTR) c);
 #else
                         /* We need to resync all clients on new player connect as we don't have a 'reference game' */
@@ -882,10 +885,13 @@ void S9xNPServerLoop (void *)
                     S9xNPSendSRAMToAllClients ();
                     break;
                 case NP_SERVER_SEND_DKC_SWITCH_HOST:
-                    S9xSendDKCSwitchHostToClient(1);
+                    S9xSendDKCSwitchHostToClient((pint)task_data);
                     break;
                 case NP_SERVER_SEND_DKC_SWAP_PLAYER_SLOTS:
-                    S9xSendDKCSwitchPlayerToClient(1);
+                    S9xSendDKCSwitchPlayerToClient((pint)task_data);
+                    break;
+                case NP_SERVER_SEND_DKC_PLAYER_SLOT:
+                    S9xSendDKCPlayerSlotToClient((pint)task_data);
                     break;
 
                 default:
@@ -1278,6 +1284,25 @@ void S9xSendDKCSwitchPlayerToClient(int c)
 	*ptr++ = NP_SERV_MAGIC;
 	*ptr++ = NPServer.Clients[c].SendSequenceNum++;;
 	*ptr++ = NP_SERV_DKC_SWAP_PLAYER_SLOTS;
+	WRITE_LONG(ptr, NPServer.FrameCount);
+	if (!S9xNPSSendData(NPServer.Clients[c].Socket, header, 7))
+		S9xNPShutdownClient(c, TRUE);
+}
+
+void S9xSendDKCPlayerSlotToClient(int c)
+{
+#ifdef NP_DEBUG
+	printf("SERVER: Sending Switch Host to player %d @%ld\n", c + 1, S9xGetMilliTime() - START);
+#endif
+
+	sprintf(NetPlay.ActionMsg, "SERVER: Sending Switch Host to player %d...", c + 1);
+	S9xNPSetAction(NetPlay.ActionMsg, TRUE);
+	uint8 header[7];
+	uint8* ptr = header;
+
+	*ptr++ = NP_SERV_MAGIC;
+	*ptr++ = NPServer.Clients[c].SendSequenceNum++;;
+	*ptr++ = NP_SERV_DKC_PLAYER_SLOT | (DKCNetPlay.OtherPlayer == 1 ? 0x20 : 0);;
 	WRITE_LONG(ptr, NPServer.FrameCount);
 	if (!S9xNPSSendData(NPServer.Clients[c].Socket, header, 7))
 		S9xNPShutdownClient(c, TRUE);

@@ -494,7 +494,7 @@ void DKC_SwitchHost()
 {
 	if (DKCNetPlay.IsHost)
 	{
-		S9xNPServerAddTask(NP_SERVER_SEND_DKC_SWITCH_HOST, 0);
+		S9xNPServerAddTask(NP_SERVER_SEND_DKC_SWITCH_HOST, (void*)(pint)1);
 		Sleep(300);
 		DKCNetPlay.IsHost = false;
 		S9xSetPause(PAUSE_NETPLAY_CONNECT);
@@ -1919,8 +1919,8 @@ LRESULT CALLBACK WinProc(
 #ifdef NETPLAY_SUPPORT
 		case ID_NETPLAY_SERVER:
             S9xRestoreWindowTitle ();
-			DKCNetPlay.Player = 0;
-			DKCNetPlay.OtherPlayer = 1;
+			DKCNetPlay.Player = DKCNetPlay.PlayerSlotSetting;
+			DKCNetPlay.OtherPlayer = DKCNetPlay.PlayerSlotSetting == 0 ? 1 : 0;
 			DKCNetPlay.IsHost = true;
             EnableServer (!Settings.NetPlayServer, TRUE);
 			if(Settings.NetPlayServer)
@@ -1946,7 +1946,7 @@ LRESULT CALLBACK WinProc(
 		{
 			if (Settings.NetPlayServer && DKCNetPlay.IsHost)
 			{
-				S9xNPServerAddTask(NP_SERVER_SEND_DKC_SWAP_PLAYER_SLOTS, 0);
+				S9xNPServerAddTask(NP_SERVER_SEND_DKC_SWAP_PLAYER_SLOTS, (void*)(pint)1);
 				std::swap(DKCNetPlay.Player, DKCNetPlay.OtherPlayer);
 			}
 		} break;
@@ -7499,6 +7499,17 @@ INT_PTR CALLBACK DlgNPOptions(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 		SendDlgItemMessage(hDlg, IDC_MAXSPIN, UDM_SETPOS,0,MAKELONG(NetPlay.MaxFrameSkip,0));
 		SendDlgItemMessage(hDlg, IDC_PAUSESPIN, UDM_SETRANGE,0,MAKELONG(30,0));
 		SendDlgItemMessage(hDlg, IDC_PAUSESPIN, UDM_SETPOS,0,MAKELONG(NetPlay.MaxBehindFrameCount,0));
+
+		if (DKCNetPlay.PlayerSlotSetting == 0)
+		{
+			SendDlgItemMessage(hDlg, IDC_DKC_PLAYERSLOT2, BM_SETCHECK, (WPARAM)BST_UNCHECKED, 0);
+			SendDlgItemMessage(hDlg, IDC_DKC_PLAYERSLOT1, BM_SETCHECK, (WPARAM)BST_CHECKED, 0);
+		}
+		else
+		{
+			SendDlgItemMessage(hDlg, IDC_DKC_PLAYERSLOT1, BM_SETCHECK, (WPARAM)BST_UNCHECKED, 0);
+			SendDlgItemMessage(hDlg, IDC_DKC_PLAYERSLOT2, BM_SETCHECK, (WPARAM)BST_CHECKED, 0);
+		}
 		return TRUE;
 	case WM_PAINT:
 		{
@@ -7532,6 +7543,7 @@ INT_PTR CALLBACK DlgNPOptions(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 				Settings.NetPlayServer = IsDlgButtonChecked(hDlg,IDC_ACTASSERVER);
 				NPServer.SendROMImageOnConnect = IsDlgButtonChecked(hDlg,IDC_SENDROM);
 				NPServer.SyncByReset = IsDlgButtonChecked(hDlg,IDC_SYNCBYRESET);
+				DKCNetPlay.PlayerSlotSetting = IsDlgButtonChecked(hDlg, IDC_DKC_PLAYERSLOT1) ? 0 : 1;
 
 				EndDialog(hDlg,0);
 				WinSaveConfigFile();

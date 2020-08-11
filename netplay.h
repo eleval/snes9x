@@ -61,6 +61,7 @@
 #define NP_SERV_JOYPAD_SWAP 12
 #define NP_SERV_DKC_SWITCH_HOST 13
 #define NP_SERV_DKC_SWAP_PLAYER_SLOTS 14
+#define NP_SERV_DKC_PLAYER_SLOT 15
 
 struct SNPClient
 {
@@ -86,7 +87,8 @@ enum {
     NP_SERVER_SEND_SRAM_ALL,
     NP_SERVER_SEND_SRAM,
     NP_SERVER_SEND_DKC_SWITCH_HOST,
-    NP_SERVER_SEND_DKC_SWAP_PLAYER_SLOTS
+    NP_SERVER_SEND_DKC_SWAP_PLAYER_SLOTS,
+    NP_SERVER_SEND_DKC_PLAYER_SLOT
 };
 
 #define NP_MAX_TASKS 20
@@ -163,7 +165,8 @@ struct SDKCNetPlay
 	
     int Game = 0;
 
-    int Player = 0;
+	int PlayerSlotSetting = 0; // This is only used for the settings as the Player variable might be changed during gameplay, so we don't accidentally save it with the wrong value
+	int Player = 0;
     int OtherPlayer = 1;
 
     std::string PeerHostName;

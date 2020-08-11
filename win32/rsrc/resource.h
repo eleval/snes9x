@@ -358,6 +358,9 @@
 #define IDC_REDUCEINPUTLAG              1258
 #define IDC_INTEGERSCALING              1259
 #define IDC_NTSCSCANLINES               1260
+#define IDC_DKC_PLAYERSLOT_BLOCK		1261
+#define IDC_DKC_PLAYERSLOT1				1262
+#define IDC_DKC_PLAYERSLOT2				1263
 #define IDC_HOTKEY1                     2000
 #define IDC_HOTKEY2                     2001
 #define IDC_HOTKEY3                     2002

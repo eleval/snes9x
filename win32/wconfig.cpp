@@ -882,6 +882,7 @@ void WinRegisterConfigItems()
 	AddBool2("SendROMImageOnConnect", NPServer.SendROMImageOnConnect, false);
 	AddUInt("MaxFrameSkip", NetPlay.MaxFrameSkip, 10);
 	AddUInt("MaxBehindFrameCount", NetPlay.MaxBehindFrameCount, 10);
+	AddInt("DKC_PlayerSlotSetting", DKCNetPlay.PlayerSlotSetting, 0);
 	AddBoolC("UseJoypad1", GUI.NetplayUseJoypad1, true, "if false, player 2 has to use their joypad #2 controls, etc.");
 	#define ADD(n,d) AddString("RecentHost" #n, GUI.RecentHostNames[n-1], MAX_PATH, d)
 		ADD(1,"localhost");  ADD(2,"");  ADD(3,"");  ADD(4,"");  ADD(5,"");  ADD(6,"");  ADD(7,"");  ADD(8,"");
