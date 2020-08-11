@@ -3636,42 +3636,83 @@ int WINAPI WinMain(
 			}
 			else
 			{
-				int address = 0;
 				uint8_t playerNumber = 0;
+				uint8_t gameMode = 1; // 0 = Single, 1 = Coop, 2 = Contest
+
 				switch (DKCNetPlay.Game)
 				{
 					case 1: // DKC1
+					{
 						// DKC1 PAL & NTSC-U : 0x7E0044 = Player, 0x7E056F = Character
 						// DKC1 NTSC-J = 0x7E057F = Character
-						switch (Memory.ROMRegion)
+						// 0x7F2335 = Game Mode for all regions
+						gameMode = GetValueAtAddress<uint8_t>(0x7F2335); // Other possible address : 0x7F2559
+						if (gameMode == 2)
 						{
-							case 0: // NTSC-J
-								playerNumber = GetValueAtAddress<uint8_t>(0x7E057F);
-							default: // NTSC-U & PAL
-								playerNumber = GetValueAtAddress<uint8_t>(0x7E056F);
-								break;
+							// If we're in Contest mode, use a different address.
+							// 0x7E0044 is actually the player number but for some reason it doesn't work on the level selection screen in Coop, so another address is checked in coop
+							playerNumber = GetValueAtAddress<uint8_t>(0x7E0044);
+
 						}
-						break;
+						else
+						{
+							// For Coop, we check a different address, which actually correspond to the character that is played.
+							// This is done because the player value is somehow not updated on the level selection screen
+							// It's also updated too late when changing character
+							switch (Memory.ROMRegion)
+							{
+								case 0: // NTSC-J
+									playerNumber = GetValueAtAddress<uint8_t>(0x7E057F) - 1;
+								default: // NTSC-U & PAL
+									playerNumber = GetValueAtAddress<uint8_t>(0x7E056F) - 1;
+									break;
+							}
+						}
+
+					} break;
 					case 2: // DKC2
+					{
 						// DKC2 : 0x7E08A4 = Player, 0x7E08A2 = Character (same for all regions)
-						playerNumber = GetValueAtAddress<uint8_t>(0x7E08A2);
-						break;
-					case 3: // DKC3
-						// DKC3 : 0x7E05B5 = Player, 0x7E05B3 = Character (0x7E003B & 0x7E05BB for Player, 0x7E05B9 for Character in PAL & NTSC-J)
-						address = 0x7E05B3;
-						switch (Memory.ROMRegion)
+						// 0x7E060F = Player in contest mode
+						// 0x7E060D = Game mode
+						gameMode = GetValueAtAddress<uint8_t>(0x7E060D);
+						if (gameMode == 2)
 						{
-							case 1: // NTSC-U
-								playerNumber = GetValueAtAddress<uint8_t>(0x7E05B3);
-								break;
-							default: // NTSC-J & PAL
-								playerNumber = GetValueAtAddress<uint8_t>(0x7E05B9);
-								break;
+							// Check a different address in Contest Mode to see which player is playing. Coop mode only checks character
+							playerNumber = GetValueAtAddress<uint8_t>(0x7E060F);
 						}
-						break;
+						else
+						{
+							playerNumber = GetValueAtAddress<uint8_t>(0x7E08A4);
+						}
+
+					} break;
+					case 3: // DKC3
+					{
+						// DKC3 : 0x7E05B5 = Player, 0x7E05B3 = Character (0x7E003B & 0x7E05BB for Player, 0x7E05B9 for Character in PAL & NTSC-J)
+						// 0x7E04C4 = Game mode for all regions
+						// 0x7E04C6 = Player in contest mode
+						gameMode = GetValueAtAddress<uint8_t>(0x7E04C4);
+						if (gameMode == 2)
+						{
+							playerNumber = GetValueAtAddress<uint8_t>(0x7E04C6);
+						}
+						else
+						{
+							switch (Memory.ROMRegion)
+							{
+								case 1: // NTSC-U
+									playerNumber = GetValueAtAddress<uint8_t>(0x7E05B5);
+									break;
+								default: // NTSC-J & PAL
+									playerNumber = GetValueAtAddress<uint8_t>(0x7E05BB);
+									break;
+							}
+						}
+					} break;
 				}
 
-				if (playerNumber - 1 != DKCNetPlay.Player)
+				if (playerNumber == DKCNetPlay.OtherPlayer)
 				{
 					// Wait 500ms before sending switch packet, to make sure Client has the time to process the character change input
 					auto timeNow = std::chrono::high_resolution_clock::now();
