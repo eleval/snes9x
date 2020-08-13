@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <memory.h>
 #include <sys/types.h>
+#include <cassert>
 
 #include "snes9x.h"
 #include "controls.h"
@@ -567,6 +568,7 @@ bool8 S9xNPWaitForHeartBeat ()
 #ifdef NP_DEBUG
 				printf("CLIENT: NP_SERV_DKC_PLAYER_SLOT received @%ld\n", S9xGetMilliTime() - START);
 #endif
+                assert(!DKCNetPlay.IsHost);
 				DKCNetPlay.Player = (header[2] & 0x20) == 0 ? 0 : 1;
 				DKCNetPlay.OtherPlayer = DKCNetPlay.Player == 0 ? 1 : 0;
 			} break;
