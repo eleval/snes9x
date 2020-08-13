@@ -473,18 +473,26 @@ void S9xNPProcessClient (int c)
 
                     if (NPServer.SyncByReset)
                     {
-                        S9xNPServerAddTask (NP_SERVER_SEND_DKC_PLAYER_SLOT, (void*)(UINT_PTR)c);
+                        if (c == 1)
+                        {
+                            S9xNPServerAddTask(NP_SERVER_SEND_DKC_PLAYER_SLOT, (void*)(UINT_PTR)c);
+                        }
                         S9xNPServerAddTask (NP_SERVER_SEND_SRAM, (void *) (pint) c);
                         S9xNPServerAddTask (NP_SERVER_RESET_ALL, 0);
                     }
                     else
+                    {
+                        if (c == 1)
+                        {
+                            S9xNPServerAddTask(NP_SERVER_SEND_DKC_PLAYER_SLOT, (void*)(UINT_PTR)c);
+                        }
 #ifdef __WIN32__
-                        S9xNPServerAddTask (NP_SERVER_SEND_DKC_PLAYER_SLOT, (void *)(UINT_PTR) c);
-                        S9xNPServerAddTask (NP_SERVER_SYNC_CLIENT, (void *)(UINT_PTR) c);
+                        S9xNPServerAddTask(NP_SERVER_SYNC_CLIENT, (void*)(UINT_PTR)c);
 #else
                         /* We need to resync all clients on new player connect as we don't have a 'reference game' */
-                        S9xNPServerAddTask (NP_SERVER_SYNC_ALL, (void *) (pint) c);
+                        S9xNPServerAddTask(NP_SERVER_SYNC_ALL, (void*)(pint)c);
 #endif
+                    }
                 }
             }
             else
@@ -1302,7 +1310,7 @@ void S9xSendDKCPlayerSlotToClient(int c)
 
 	*ptr++ = NP_SERV_MAGIC;
 	*ptr++ = NPServer.Clients[c].SendSequenceNum++;;
-	*ptr++ = NP_SERV_DKC_PLAYER_SLOT | (DKCNetPlay.OtherPlayer == 1 ? 0x20 : 0);;
+	*ptr++ = NP_SERV_DKC_PLAYER_SLOT | (DKCNetPlay.OtherPlayer == 1 ? 0x20 : 0);
 	WRITE_LONG(ptr, NPServer.FrameCount);
 	if (!S9xNPSSendData(NPServer.Clients[c].Socket, header, 7))
 		S9xNPShutdownClient(c, TRUE);
