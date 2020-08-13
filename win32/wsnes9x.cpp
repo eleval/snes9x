@@ -1971,10 +1971,7 @@ LRESULT CALLBACK WinProc(
         case ID_NETPLAY_CONNECT:
             RestoreGUIDisplay ();
 			if(1<=DialogBoxParam(g_hInst, MAKEINTRESOURCE(IDD_NETCONNECT), hWnd, DlgNetConnect,(LPARAM)&hostname))
-
             {
-				DKCNetPlay.Player = 1;
-				DKCNetPlay.OtherPlayer = 0;
 				DKCNetPlay.IsHost = false;
 				S9xSetPause (PAUSE_NETPLAY_CONNECT);
 
