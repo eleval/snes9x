@@ -3618,8 +3618,7 @@ int WINAPI WinMain(
         }
 
 		// DKC : Check which character is controlled and switch host if needed
-		// Unfortunately this does not work for contest mode just yet
-		if (Settings.NetPlayServer && DKCNetPlay.IsHost && NPServer.NumClients == 2)
+		if (Settings.NetPlayServer && DKCNetPlay.IsHost && !NPServer.Paused && NPServer.NumClients == 2 && NPServer.Clients[0].Ready && NPServer.Clients[1].Ready)
 		{
 			if (DKCNetPlay.IsHostSwitching)
 			{
