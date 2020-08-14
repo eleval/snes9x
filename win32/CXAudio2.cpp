@@ -140,11 +140,29 @@ bool CXAudio2::InitVoices(void)
 	const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
 	if (SUCCEEDED(CoCreateInstance(CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, IID_IMMDeviceEnumerator, (void**)&pEnumerator)))
 	{
+		if (device_index == 0)
+		{
+			IMMDevice* pDefaultDevice = nullptr;
+			if (SUCCEEDED(pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDefaultDevice)))
+			{
+				LPWSTR deviceId;
+				if (SUCCEEDED(pDefaultDevice->GetId(&deviceId)))
+				{
+					if (FAILED(hr = pXAudio2->CreateMasteringVoice(&pMasterVoice, 2,
+						Settings.SoundPlaybackRate, 0, deviceId, NULL))) {
+						DXTRACE_ERR_MSGBOX(TEXT("Unable to create mastering voice."), hr);
+						return false;
+					}
+				}
+				pDefaultDevice->Release();
+			}
+		}
+
 		IMMDeviceCollection* endPoints = nullptr;
 		if (SUCCEEDED(pEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &endPoints)))
 		{
 			IMMDevice* pDevice = nullptr;
-			if (SUCCEEDED(endPoints->Item(device_index, &pDevice)))
+			if (SUCCEEDED(endPoints->Item(device_index - 1, &pDevice)))
 			{
 				LPWSTR deviceId;
 				if (SUCCEEDED(pDevice->GetId(&deviceId)))
@@ -407,6 +425,7 @@ std::vector<std::wstring> CXAudio2::GetDeviceList()
 			IMMDeviceCollection* endPoints = nullptr;
 			if (SUCCEEDED(pEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, &endPoints)))
 			{
+				device_list.push_back(L"Default");
 				UINT32 num_devices;
 				//device_list.push_back(_T("Default"));
 				if (SUCCEEDED(endPoints->GetCount(&num_devices)))
