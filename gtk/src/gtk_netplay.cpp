@@ -189,6 +189,7 @@ void S9xNetplayDialogOpen()
         }
         else
         {
+			DKCNetPlay.PlayerSlotSetting = gui_config->dkc_player_slot;
 			DKCNetPlay.Player = DKCNetPlay.PlayerSlotSetting;
 			DKCNetPlay.OtherPlayer = DKCNetPlay.PlayerSlotSetting == 0 ? 1 : 0;
 			DKCNetPlay.IsHost = true;

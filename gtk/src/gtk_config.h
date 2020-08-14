@@ -125,6 +125,7 @@ class Snes9xConfig
     int netplay_last_port;
     bool netplay_activated;
     bool netplay_server_up;
+	int dkc_player_slot;
 
     /* Operational */
     int sound_driver;

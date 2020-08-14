@@ -2473,6 +2473,44 @@
                         <property name="can_focus">False</property>
                         <property name="border_width">5</property>
                         <property name="spacing">5</property>
+						<child>
+						  <object class="GtkHBox" id="dkc_player_box">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="border_width">5</property>
+                            <property name="spacing">5</property>
+							<child>
+						      <object class="GtkLabel" id="dkc_player_label">
+                              <property name="visible">True</property>
+                              <property name="can_focus">False</property>
+                              <property name="label" translatable="yes">DKC Player choice:</property>
+                              </object>
+						    </child>
+						    <child>
+						      <object class="GtkRadioButton" id="dkc_player1_radio">
+                                <property name="label" translatable="yes">Player 1</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                                <signal name="toggled" handler="dkc_player1_toggled" swapped="no"/>
+                              </object>
+						    </child>
+						    <child>
+						      <object class="GtkRadioButton" id="dkc_player2_radio">
+                                <property name="label" translatable="yes">Player 2</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                                <property name="group">dkc_player1_radio</property>
+                                <signal name="toggled" handler="dkc_player2_toggled" swapped="no"/>
+                              </object>
+						    </child>
+						  </object>
+						</child>
                         <child>
                           <object class="GtkCheckButton" id="sync_reset">
                             <property name="label" translatable="yes">Sync using reset</property>

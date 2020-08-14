@@ -140,6 +140,7 @@ int Snes9xConfig::load_defaults()
     netplay_last_rom.clear();
     netplay_last_host.clear();
     netplay_last_port = 6096;
+	dkc_player_slot = 0;
     modal_dialogs = true;
     current_save_slot = 0;
     S9xCheatsEnable();
@@ -330,6 +331,7 @@ int Snes9xConfig::save_config_file()
     outint("LastUsedPort", netplay_last_port);
     outstring("LastUsedROM", netplay_last_rom);
     outstring("LastUsedHost", netplay_last_host);
+	outint("DKC_PlayerSlot", dkc_player_slot);
 
     section = "Behavior";
     outbool("PauseEmulationWhenFocusLost", pause_emulation_on_switch);
@@ -561,6 +563,7 @@ int Snes9xConfig::load_config_file()
     inint("LastUsedPort", netplay_last_port);
     instr("LastUsedROM", netplay_last_rom);
     instr("LastUsedHost", netplay_last_host);
+	inint("DKC_PlayerSlot", dkc_player_slot);
 
     section = "Behavior";
     inbool("PauseEmulationWhenFocusLost", pause_emulation_on_switch);

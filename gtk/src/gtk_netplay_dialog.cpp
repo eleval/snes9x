@@ -39,6 +39,7 @@ void Snes9xNetplayDialog::update_state()
         enable_widget("default_port_box", true);
         enable_widget("sync_reset", true);
         enable_widget("send_image", true);
+		enable_widget("dkc_player_box", true);
     }
 
     else
@@ -47,6 +48,7 @@ void Snes9xNetplayDialog::update_state()
         enable_widget("default_port_box", false);
         enable_widget("sync_reset", false);
         enable_widget("send_image", false);
+		enable_widget("dkc_player_box", false);
     }
 }
 
@@ -61,6 +63,8 @@ void Snes9xNetplayDialog::settings_to_dialog()
     set_spin("frames_behind", config->netplay_max_frame_loss);
     set_check("connect_radio", !config->netplay_is_server);
     set_check("host_radio", config->netplay_is_server);
+	set_check("dkc_player1_radio", config->dkc_player_slot == 0);
+	set_check("dkc_player2_radio", config->dkc_player_slot == 1);
 
     update_state();
 }
@@ -75,6 +79,7 @@ void Snes9xNetplayDialog::settings_from_dialog()
     config->netplay_default_port = get_spin("default_port");
     config->netplay_max_frame_loss = get_spin("frames_behind");
     config->netplay_is_server = get_check("host_radio");
+	config->dkc_player_slot = get_check("dkc_player1_radio") ? 0 : 1;
 
     config->save_config_file();
 }
