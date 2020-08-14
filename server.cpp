@@ -53,7 +53,7 @@
 #ifdef __WIN32__
 #define NP_ONE_CLIENT 1
 #else
-#define NP_ONE_CLIENT 0
+#define NP_ONE_CLIENT 1
 #endif
 
 struct SNPServer NPServer;
@@ -475,7 +475,7 @@ void S9xNPProcessClient (int c)
                     {
                         if (c == 1)
                         {
-                            S9xNPServerAddTask(NP_SERVER_SEND_DKC_PLAYER_SLOT, (void*)(UINT_PTR)c);
+                            S9xNPServerAddTask(NP_SERVER_SEND_DKC_PLAYER_SLOT, (void*)(pint)c);
                         }
                         S9xNPServerAddTask (NP_SERVER_SEND_SRAM, (void *) (pint) c);
                         S9xNPServerAddTask (NP_SERVER_RESET_ALL, 0);
@@ -484,14 +484,9 @@ void S9xNPProcessClient (int c)
                     {
                         if (c == 1)
                         {
-                            S9xNPServerAddTask(NP_SERVER_SEND_DKC_PLAYER_SLOT, (void*)(UINT_PTR)c);
+                            S9xNPServerAddTask(NP_SERVER_SEND_DKC_PLAYER_SLOT, (void*)(pint)c);
                         }
-#ifdef __WIN32__
-                        S9xNPServerAddTask(NP_SERVER_SYNC_CLIENT, (void*)(UINT_PTR)c);
-#else
-                        /* We need to resync all clients on new player connect as we don't have a 'reference game' */
-                        S9xNPServerAddTask(NP_SERVER_SYNC_ALL, (void*)(pint)c);
-#endif
+                        S9xNPServerAddTask(NP_SERVER_SYNC_CLIENT, (void*)(pint)c);
                     }
                 }
             }

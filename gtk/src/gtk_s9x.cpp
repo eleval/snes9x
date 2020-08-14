@@ -167,7 +167,7 @@ int S9xOpenROM(const char *rom_filename)
         S9xAutoSaveSRAM();
     }
 
-    S9xNetplayDisconnect();
+    S9xNetplayDisconnect(FALSE);
 
     flags = CPU.Flags;
 
@@ -363,6 +363,7 @@ static bool S9xIdleFunc()
             Settings.Mute &= ~0x80;
 
         S9xMainLoop();
+		DKC_CheckForHostSwitch();
 
         S9xNetplayPop();
     }

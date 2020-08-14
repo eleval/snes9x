@@ -27,7 +27,7 @@ extern SNPServer NPServer;
 
 static void S9xNetplayPreconnect()
 {
-    S9xNetplayDisconnect();
+    S9xNetplayDisconnect(FALSE);
 
     if (gui_config->rom_loaded)
     {
@@ -100,7 +100,7 @@ void S9xNetplayStopServer()
     gui_config->netplay_server_up = false;
 }
 
-void S9xNetplayDisconnect()
+void S9xNetplayDisconnect(bool8 killServer)
 {
     if (Settings.NetPlay)
     {
@@ -108,10 +108,10 @@ void S9xNetplayDisconnect()
             S9xNPDisconnect();
     }
 
-    if (gui_config->netplay_server_up)
+    if (killServer && gui_config->netplay_server_up)
     {
         S9xNetplayStopServer();
-    }
+	}
 
     gui_config->netplay_activated = false;
     NetPlay.Paused = false;
@@ -126,7 +126,7 @@ static gpointer S9xNetplayServerThread(gpointer)
     return NULL;
 }
 
-void S9xNetplayStartServer()
+void S9xNetplayStartServer(bool8 autoConnect)
 {
     uint32 flags;
 
@@ -149,12 +149,15 @@ void S9xNetplayStartServer()
     /* Sleep to let the server create itself */
     usleep(10000);
 
-    S9xNPConnectToServer("127.0.0.1",
-                         gui_config->netplay_default_port,
-                         Memory.ROMName);
+	if (autoConnect)
+	{
+		S9xNPConnectToLocalServer();
+	}
 
-    S9xReset();
-
+	if (gui_config->netplay_sync_reset)
+	{
+    	S9xReset();
+	}
     S9xROMLoaded();
 
     gui_config->netplay_activated = true;
@@ -180,11 +183,16 @@ void S9xNetplayDialogOpen()
     {
         if (!gui_config->netplay_is_server)
         {
+			DKCNetPlay.IsHost = false;
+			S9xNetplayStartServer(FALSE);
             S9xNetplayConnect();
         }
         else
         {
-            S9xNetplayStartServer();
+			DKCNetPlay.Player = DKCNetPlay.PlayerSlotSetting;
+			DKCNetPlay.OtherPlayer = DKCNetPlay.PlayerSlotSetting == 0 ? 1 : 0;
+			DKCNetPlay.IsHost = true;
+            S9xNetplayStartServer(TRUE);
         }
 
         S9xSoundStart();
@@ -267,7 +275,7 @@ int S9xNetplayPush()
 {
     if (gui_config->netplay_activated &&
         (!Settings.NetPlay || !NetPlay.Connected))
-        S9xNetplayDisconnect();
+        S9xNetplayDisconnect(TRUE);
 
     if (!Settings.NetPlay)
         return 0;

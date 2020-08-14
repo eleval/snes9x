@@ -12,6 +12,6 @@ int S9xNetplayPush();
 void S9xNetplayPop();
 int S9xNetplaySyncSpeed();
 void S9xNetplaySyncClients();
-void S9xNetplayDisconnect();
+void S9xNetplayDisconnect(bool8 killServer);
 
 #endif /* __GTK_NETPLAY_H */
