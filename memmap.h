@@ -213,6 +213,24 @@ enum s9xwriteorder_t
 	WRITE_10
 };
 
+template<typename T>
+T GetValueAtAddress(int address)
+{
+	address -= 0x7E0000;
+
+	T value = 0;
+	const uint8* source;
+	if (address < 0x20000)
+		source = Memory.RAM + address;
+	else if (address < 0x30000)
+		source = Memory.SRAM + address - 0x20000;
+	else
+		source = Memory.FillRAM + address - 0x30000;
+	memcpy(&value, source, sizeof(T));
+
+	return value;
+}
+
 #include "getset.h"
 
 #endif

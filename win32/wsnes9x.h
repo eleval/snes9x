@@ -474,7 +474,6 @@ bool UnfreezeScreenshotSlot(int slot, uint16 **image_buffer, int &width, int &he
 
 #ifdef NETPLAY_SUPPORT
 void EnableServer(bool8 enable, bool8 autoConnect);
-bool8 ConnectToLocalServer();
 #endif
 
 #endif // !defined(SNES9X_H_INCLUDED)

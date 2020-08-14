@@ -35,6 +35,10 @@
 #include "display.h"
 #include "sha256.h"
 
+#ifdef NETPLAY_SUPPORT
+#include "netplay.h"
+#endif
+
 #ifndef SET_UI_COLOR
 #define SET_UI_COLOR(r, g, b) ;
 #endif
@@ -2645,6 +2649,20 @@ void CMemory::InitROM (void)
 
 	if (PostRomInitFunc)
 		PostRomInitFunc();
+
+	// Check if this is a DKC ROM and set which one it is
+	if (strcmp(Memory.ROMName, "DONKEY KONG COUNTRY") == 0)
+	{
+		DKCNetPlay.Game = 1;
+	}
+	else if (strcmp(Memory.ROMName, "DIDDY'S KONG QUEST") == 0)
+	{
+		DKCNetPlay.Game = 2;
+	}
+	else if (strcmp(Memory.ROMName, "DONKEY KONG COUNTRY 31") == 0)
+	{
+		DKCNetPlay.Game = 3;
+	}
 
     S9xVerifyControllers();
 }

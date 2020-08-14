@@ -54,6 +54,8 @@
 #include "snapshot.h"
 #include "display.h"
 
+#include <chrono>
+
 void S9xNPClientLoop (void *);
 bool8 S9xNPLoadROM (uint32 len);
 bool8 S9xNPLoadROMDialog (const char *);
@@ -67,6 +69,11 @@ extern SNPServer NPServer;
 unsigned long START = 0;
 
 bool8 S9xNPConnect ();
+
+bool8 S9xNPConnectToLocalServer()
+{
+	return S9xNPConnectToServer("127.0.0.1", Settings.Port, Memory.ROMName);
+}
 
 bool8 S9xNPConnectToServer (const char *hostname, int port,
                             const char *rom_name)
@@ -545,12 +552,16 @@ bool8 S9xNPWaitForHeartBeat ()
 #ifdef NP_DEBUG
 				printf("CLIENT: DKC_SWITCH_HOST received @%ld\n", S9xGetMilliTime() - START);
 #endif
+#ifdef __WIN32__
                 S9xSetPause(PAUSE_NETPLAY_CONNECT);
+#endif
                 S9xNPDisconnect();
 				DKCNetPlay.IsHost = true;
-                if (!ConnectToLocalServer())
+                if (!S9xNPConnectToLocalServer())
                 {
+#ifdef __WIN32__
                     S9xClearPause(PAUSE_NETPLAY_CONNECT);
+#endif
                     break;
                 }
                 S9xNPRecomputePause();
@@ -1097,3 +1108,133 @@ void S9xNPSetWarning (const char *warning)
 #endif
 }
 #endif
+
+
+void DKC_SwitchHost()
+{
+	if (DKCNetPlay.IsHost)
+	{
+		S9xNPServerAddTask(NP_SERVER_SEND_DKC_SWITCH_HOST, (void*)(pint)1);
+#ifdef __WIN32__
+		Sleep(300);
+#else
+		usleep(300000);
+#endif
+		DKCNetPlay.IsHost = false;
+#ifdef __WIN32__
+		S9xSetPause(PAUSE_NETPLAY_CONNECT);
+#endif
+		if (!S9xNPConnectToServer(DKCNetPlay.PeerHostName.c_str(), Settings.Port,
+			Memory.ROMName))
+		{
+#ifdef __WIN32__
+			S9xClearPause(PAUSE_NETPLAY_CONNECT);
+#endif
+		}
+	}
+}
+
+void DKC_CheckForHostSwitch()
+{
+	// DKC : Check which character is controlled and switch host if needed
+	if (Settings.NetPlayServer && DKCNetPlay.IsHost && !NPServer.Paused && NPServer.NumClients == 2 && NPServer.Clients[0].Ready && NPServer.Clients[1].Ready)
+	{
+		if (DKCNetPlay.IsHostSwitching)
+		{
+			auto timeNow = std::chrono::high_resolution_clock::now();
+			auto timeNowMS = std::chrono::time_point_cast<std::chrono::milliseconds>(timeNow);
+			if (timeNowMS.time_since_epoch().count() >= DKCNetPlay.HostSwitchDelay)
+			{
+				DKCNetPlay.IsHostSwitching = false;
+				DKC_SwitchHost();
+			}
+		}
+		else
+		{
+			uint8_t playerNumber = 0;
+			uint8_t gameMode = 1; // 0 = Single, 1 = Coop, 2 = Contest
+
+			switch (DKCNetPlay.Game)
+			{
+				case 1: // DKC1
+				{
+					// DKC1 PAL & NTSC-U : 0x7E0044 = Player, 0x7E056F = Character
+					// DKC1 NTSC-J = 0x7E057F = Character
+					// 0x7F2335 = Game Mode for all regions
+					gameMode = GetValueAtAddress<uint8_t>(0x7F2335); // Other possible address : 0x7F2559
+					if (gameMode == 2)
+					{
+						// If we're in Contest mode, use a different address.
+						// 0x7E0044 is actually the player number but for some reason it doesn't work on the level selection screen in Coop, so another address is checked in coop
+						playerNumber = GetValueAtAddress<uint8_t>(0x7E0044);
+					}
+					else
+					{
+						// For Coop, we check a different address, which actually correspond to the character that is played.
+						// This is done because the player value is somehow not updated on the level selection screen
+						// It's also updated too late when changing character
+						switch (Memory.ROMRegion)
+						{
+							case 0: // NTSC-J
+								playerNumber = GetValueAtAddress<uint8_t>(0x7E057F) - 1;
+								break;
+							default: // NTSC-U & PAL
+								playerNumber = GetValueAtAddress<uint8_t>(0x7E056F) - 1;
+								break;
+						}
+					}
+
+				} break;
+				case 2: // DKC2
+				{
+					// DKC2 : 0x7E08A4 = Player, 0x7E08A2 = Character (same for all regions)
+					// 0x7E060F = Player in contest mode
+					// 0x7E060D = Game mode
+					gameMode = GetValueAtAddress<uint8_t>(0x7E060D);
+					if (gameMode == 2)
+					{
+						// Check a different address in Contest Mode to see which player is playing. Coop mode only checks character
+						playerNumber = GetValueAtAddress<uint8_t>(0x7E060F);
+					}
+					else
+					{
+						playerNumber = GetValueAtAddress<uint8_t>(0x7E08A4);
+					}
+
+				} break;
+				case 3: // DKC3
+				{
+					// DKC3 : 0x7E05B5 = Player, 0x7E05B3 = Character (0x7E003B & 0x7E05BB for Player, 0x7E05B9 for Character in PAL & NTSC-J)
+					// 0x7E04C4 = Game mode for all regions
+					// 0x7E04C6 = Player in contest mode
+					gameMode = GetValueAtAddress<uint8_t>(0x7E04C4);
+					if (gameMode == 2)
+					{
+						playerNumber = GetValueAtAddress<uint8_t>(0x7E04C6);
+					}
+					else
+					{
+						switch (Memory.ROMRegion)
+						{
+							case 1: // NTSC-U
+								playerNumber = GetValueAtAddress<uint8_t>(0x7E05B5);
+								break;
+							default: // NTSC-J & PAL
+								playerNumber = GetValueAtAddress<uint8_t>(0x7E05BB);
+								break;
+						}
+					}
+				} break;
+			}
+
+			if (playerNumber == DKCNetPlay.OtherPlayer)
+			{
+				// Wait 500ms before sending switch packet, to make sure Client has the time to process the character change input
+				auto timeNow = std::chrono::high_resolution_clock::now();
+				auto timeNowMS = std::chrono::time_point_cast<std::chrono::milliseconds>(timeNow);
+				DKCNetPlay.IsHostSwitching = true;
+				DKCNetPlay.HostSwitchDelay = timeNowMS.time_since_epoch().count() + 500;
+			}
+		}
+    }
+}

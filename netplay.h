@@ -226,6 +226,8 @@ void S9xNPServerAddTask (uint32 task, void *data);
 bool8 S9xNPStartServer (int port);
 void S9xNPStopServer ();
 void S9xNPSendJoypadSwap ();
+bool8 S9xNPConnectToLocalServer();
+void DKC_CheckForHostSwitch();
 #ifdef __WIN32__
 #define S9xGetMilliTime timeGetTime
 #else
