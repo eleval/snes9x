@@ -1,4 +1,4 @@
-# Snes9x
+# Snes9x DKC
 *Snes9x - Portable Super Nintendo Entertainment System (TM) emulator*
 
 This is a fork of the Snes9x repository which adds host switching during Netplay of the DKC games when the played character changes, so the game can be played without lag accross long distances.
