@@ -25,6 +25,7 @@
 	#define close(h) if(h){closesocket(h);}
 	#define read(a,b,c) recv(a, b, c, 0)
 	#define write(a,b,c) send(a, b, c, 0)
+    #define SHUT_RDWR 2
 #else
 	#include <unistd.h>
 	#include <sys/time.h>
@@ -884,6 +885,7 @@ bool8 S9xNPSendJoypadUpdate (uint32 joypad)
 
 void S9xNPDisconnect ()
 {
+    shutdown(NetPlay.Socket, SHUT_RDWR);
     close (NetPlay.Socket);
     NetPlay.Socket = -1;
     NetPlay.Connected = FALSE;
@@ -1109,6 +1111,7 @@ void S9xNPSetWarning (const char *warning)
 }
 #endif
 
+void S9xNPShutdownClient(int c, bool8 report_error = FALSE);
 
 void DKC_SwitchHost()
 {
@@ -1120,7 +1123,15 @@ void DKC_SwitchHost()
 #else
 		usleep(300000);
 #endif
+        S9xNPDisconnect();
 		DKCNetPlay.IsHost = false;
+        for (int i = 0; i < NP_MAX_CLIENTS; i++)
+        {
+            if (NPServer.Clients[i].Connected)
+            {
+                S9xNPShutdownClient(i);
+            }
+        }
 #ifdef __WIN32__
 		S9xSetPause(PAUSE_NETPLAY_CONNECT);
 #endif
